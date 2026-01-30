@@ -195,7 +195,7 @@ final class Decimal
         return Decimal::fromUnitValue($this->getUnitValue() / $division, $this->getPrecision());
     }
 
-    public function toString(int $precision = null): string
+    public function toString(?int $precision = null): string
     {
         return $this->parseAsString($this->getUnitValue() / $this->getMultiplier(), $precision);
     }
@@ -205,7 +205,7 @@ final class Decimal
         return $this->toString();
     }
 
-    private function parseAsString(mixed $value, int $precision = null): string
+    private function parseAsString(mixed $value, ?int $precision = null): string
     {
         return number_format($value, !is_null($precision) ? $precision : $this->getPrecision(), '.', '');
     }
