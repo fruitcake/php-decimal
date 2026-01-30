@@ -27,7 +27,7 @@ final class Decimal
     /**
      * Parse the input from user input, with different comma/dot
      *
-     * @param string $value
+     * @param mixed $value
      * @param $precision
      *
      * @return Decimal
