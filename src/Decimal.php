@@ -17,7 +17,7 @@ final class Decimal
         } elseif ($value instanceof BigDecimal) {
             $this->bigDecimal = clone $value;
         } else {
-            $this->bigDecimal = BigDecimal::ofUnscaledValue($value * (10 ** $precision), $precision);
+            $this->bigDecimal = BigDecimal::of(number_format((float)$value, $precision, '.', ''));
         }
     }
 
@@ -81,7 +81,7 @@ final class Decimal
 
     public function isNegative(): bool
     {
-        return $this->bigDecimal->isZero();
+        return $this->bigDecimal->isNegative();
     }
 
     public function isZeroOrPositive(): bool
@@ -106,22 +106,22 @@ final class Decimal
 
     public function isBiggerThan(mixed $value): bool
     {
-        $this->bigDecimal->isGreaterThan($this->prepareValue($value));
+        return $this->bigDecimal->isGreaterThan($this->prepareValue($value));
     }
 
     public function isBiggerOrEqualThan(mixed $value): bool
     {
-        $this->bigDecimal->isGreaterThanOrEqualTo($this->prepareValue($value));
+        return $this->bigDecimal->isGreaterThanOrEqualTo($this->prepareValue($value));
     }
 
     public function isSmallerThan(mixed $value): bool
     {
-        $this->bigDecimal->isLessThan($this->prepareValue($value));
+        return $this->bigDecimal->isLessThan($this->prepareValue($value));
     }
 
     public function isSmallerOrEqualThan(mixed $value): bool
     {
-        $this->bigDecimal->isLessThanOrEqualTo($this->prepareValue($value));
+        return $this->bigDecimal->isLessThanOrEqualTo($this->prepareValue($value));
     }
 
     public function notEquals(mixed $value): bool
@@ -161,7 +161,7 @@ final class Decimal
 
     protected function prepareValue($value)
     {
-        return $value instanceof self ? $value->getInternalDecimal() : $value;
+        return $value instanceof self ? $value->getInternalDecimal() : (new static($value))->getInternalDecimal();
     }
 
     protected function getInternalDecimal()

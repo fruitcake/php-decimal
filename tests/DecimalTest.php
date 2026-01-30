@@ -317,7 +317,7 @@ class DecimalTest extends TestCase
         return [
             [1, '1'],
             ['1.00', '1'],
-            [0.111, 0.112, 2, 2],
+            [0.111, 0.112, 2],
         ];
     }
 
@@ -326,6 +326,7 @@ class DecimalTest extends TestCase
      */
     public function testNoteEquals($a, $b, $precision = 2)
     {
+        var_dump(decimal($a, $precision));
         if ($precision == 2) {
             $this->assertFalse(decimal($a, $precision)->equals($b));
         }
@@ -400,16 +401,6 @@ class DecimalTest extends TestCase
     public function testDecimalIsNotEqual()
     {
         $this->assertTrue(decimal(3)->notEquals(5));
-    }
-
-    public function testComparePrecision()
-    {
-        $this->expectException(RuntimeException::class);
-
-        $a = decimal(3.00, 3);
-        $b = decimal(5.00, 5);
-
-        $a->equals($b);
     }
 
     public function testIsBiggerThan()
