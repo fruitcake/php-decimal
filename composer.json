@@ -1,7 +1,7 @@
 {
     "name": "fruitcake/php-decimal",
     "description": "Decimal class for PHP",
-    "keywords": ["decimal", "math", "money"],
+    "keywords": ["decimal", "math", "money", "bcmath"],
     "homepage": "https://github.com/fruitcake/php-decimal",
     "type": "library",
     "license": "MIT",
@@ -12,10 +12,12 @@
         }
     ],
     "require": {
-        "php": "^8.1"
+        "php": "^8.4",
+        "ext-bcmath": "*",
+        "ext-intl": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10",
+        "phpunit/phpunit": "^11",
         "squizlabs/php_codesniffer": "^3.7",
         "phpstan/phpstan": "^1.10|^2"
     },
@@ -41,7 +43,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0-dev"
+            "dev-main": "2.0-dev"
         }
     }
 }

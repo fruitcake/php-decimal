@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fruitcake\Decimal\Tests;
 
+use BcMath\Number;
 use Fruitcake\Decimal\Decimal;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -13,7 +14,7 @@ use RuntimeException;
  */
 class DecimalTest extends TestCase
 {
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $decimal = new Decimal(1.234, 3);
 
@@ -27,7 +28,7 @@ class DecimalTest extends TestCase
         $this->assertEquals('12.34', $decimal->toString());
     }
 
-    public function testFromUnitValue()
+    public function testFromUnitValue(): void
     {
         $decimal = Decimal::fromUnitValue(1234, 2);
 
@@ -36,17 +37,24 @@ class DecimalTest extends TestCase
         $this->assertEquals('12.34', $decimal->toString());
     }
 
+    public function testGetValue(): void
+    {
+        $decimal = new Decimal('12.34', 2);
+
+        $this->assertInstanceOf(Number::class, $decimal->getValue());
+    }
+
     /**
      * @dataProvider provideLocaleFormats
      */
-    public function testLocaleFormats($value, $expected)
+    public function testLocaleFormats(mixed $value, string $expected): void
     {
         $decimal = Decimal::parseLocale($value, 2);
 
         $this->assertSame($expected, $decimal->toString());
     }
 
-    public static function provideLocaleFormats()
+    public static function provideLocaleFormats(): array
     {
         return [
             ['', '0.00'],
@@ -66,7 +74,7 @@ class DecimalTest extends TestCase
             ['- 2', '-2.00'],
             ['- 2.00', '-2.00'],
             ['- 2. 15', '-2.15'],
-            ['â‚¬59,-', '59.00'],
+            ['€59,-', '59.00'],
             ['1', '1.00'],
             [1.2, '1.20'],
             ['1.2', '1.20'],
@@ -94,21 +102,21 @@ class DecimalTest extends TestCase
     /**
      * @dataProvider provideInvalidLocaleFormats
      */
-    public function testInvalidLocaleFormats($value)
+    public function testInvalidLocaleFormats(mixed $value): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
         Decimal::parseLocale($value, 2);
     }
 
-    public static function provideInvalidLocaleFormats()
+    public static function provideInvalidLocaleFormats(): array
     {
         return [
             ['a'],
         ];
     }
 
-    public function testHelpers()
+    public function testHelpers(): void
     {
         $decimal = decimal(1.23, 2);
         $this->assertInstanceOf(Decimal::class, $decimal);
@@ -119,7 +127,7 @@ class DecimalTest extends TestCase
         $this->assertSame('1.23', $decimal->toString());
     }
 
-    public function testToString()
+    public function testToString(): void
     {
         $decimal = new Decimal(1.23, 2);
 
@@ -127,20 +135,31 @@ class DecimalTest extends TestCase
         $this->assertSame('1.23', (string) $decimal);
     }
 
+    public function testToStringWithDifferentPrecision(): void
+    {
+        $decimal = new Decimal('1.23456', 5);
+
+        $this->assertSame('1.23456', $decimal->toString());
+        $this->assertSame('1.23', $decimal->toString(2));
+        $this->assertSame('1.2346', $decimal->toString(4));
+        $this->assertSame('1', $decimal->toString(0));
+    }
+
     /**
-     * @param $value
-     * @param $formatted
+     * @param mixed $value
+     * @param string $formatted
+     * @param int $precision
      *
      * @dataProvider provideDecimalFormats
      */
-    public function testParseAndFormat($value, $formatted, $precision = 2)
+    public function testParseAndFormat(mixed $value, string $formatted, int $precision = 2): void
     {
         $decimal = new Decimal($value, $precision);
 
         $this->assertSame($formatted, $decimal->toString());
     }
 
-    public static function provideDecimalFormats()
+    public static function provideDecimalFormats(): array
     {
         return [
             [1, '1.00'],
@@ -160,12 +179,12 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @param int $precision
      *
      * @dataProvider provideZeros
      */
-    public function testIsZero($value, $precision = 2)
+    public function testIsZero(mixed $value, int $precision = 2): void
     {
         $decimal = new Decimal($value, $precision);
 
@@ -177,7 +196,7 @@ class DecimalTest extends TestCase
         $this->assertSame('0.00', (string) $decimal);
     }
 
-    public static function provideZeros()
+    public static function provideZeros(): array
     {
         return [
             [0],
@@ -189,12 +208,12 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @param int $precision
      *
      * @dataProvider providePositives
      */
-    public function testIsPositive($value, $precision = 2)
+    public function testIsPositive(mixed $value, int $precision = 2): void
     {
         $decimal = new Decimal($value, $precision);
 
@@ -206,7 +225,7 @@ class DecimalTest extends TestCase
         $this->assertFalse($decimal->isNegative());
     }
 
-    public static function providePositives()
+    public static function providePositives(): array
     {
         return [
             [1],
@@ -216,12 +235,12 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @param int $precision
      *
      * @dataProvider provideNegatives
      */
-    public function testIsNegative($value, $precision = 2)
+    public function testIsNegative(mixed $value, int $precision = 2): void
     {
         $decimal = new Decimal($value, $precision);
 
@@ -233,7 +252,7 @@ class DecimalTest extends TestCase
         $this->assertFalse($decimal->isPositive());
     }
 
-    public static function provideNegatives()
+    public static function provideNegatives(): array
     {
         return [
             [-1],
@@ -246,7 +265,7 @@ class DecimalTest extends TestCase
     /**
      * @dataProvider provideAdds
      */
-    public function testAdd($a, $b, $expected, $precision = 2)
+    public function testAdd(mixed $a, mixed $b, string $expected, int $precision = 2): void
     {
         if ($precision == 2) {
             $this->assertSame($expected, decimal($a, $precision)->add($b)->toString());
@@ -254,7 +273,7 @@ class DecimalTest extends TestCase
         $this->assertSame($expected, decimal($a, $precision)->add(decimal($b, $precision))->toString());
     }
 
-    public static function provideAdds()
+    public static function provideAdds(): array
     {
         return [
             [0.1, 0.2, '0.30'],
@@ -266,7 +285,7 @@ class DecimalTest extends TestCase
     /**
      * @dataProvider provideSub
      */
-    public function testSub($a, $b, $expected, $precision = 2)
+    public function testSub(mixed $a, mixed $b, string $expected, int $precision = 2): void
     {
         if ($precision == 2) {
             $this->assertSame($expected, decimal($a, $precision)->sub($b)->toString());
@@ -275,7 +294,7 @@ class DecimalTest extends TestCase
         $this->assertSame($expected, decimal($a, $precision)->sub(decimal($b, $precision))->toString());
     }
 
-    public static function provideSub()
+    public static function provideSub(): array
     {
         return [
             [0.1, 0.2, '-0.10'],
@@ -287,12 +306,12 @@ class DecimalTest extends TestCase
     /**
      * @dataProvider provideMultiply
      */
-    public function testMultiply($a, $b, $expected, $precision = 2)
+    public function testMultiply(mixed $a, mixed $b, string $expected, int $precision = 2): void
     {
         $this->assertSame($expected, decimal($a, $precision)->multiply($b)->toString());
     }
 
-    public static function provideMultiply()
+    public static function provideMultiply(): array
     {
         return [
             [0.1, 2, '0.20'],
@@ -304,7 +323,7 @@ class DecimalTest extends TestCase
     /**
      * @dataProvider provideEquals
      */
-    public function testEquals($a, $b, $precision = 2)
+    public function testEquals(mixed $a, mixed $b, int $precision = 2): void
     {
         if ($precision == 2) {
             $this->assertTrue(decimal($a, $precision)->equals($b));
@@ -312,19 +331,19 @@ class DecimalTest extends TestCase
         $this->assertTrue(decimal($a, $precision)->equals(decimal($b, $precision)));
     }
 
-    public static function provideEquals()
+    public static function provideEquals(): array
     {
         return [
             [1, '1'],
             ['1.00', '1'],
-            [0.111, 0.112, 2, 2],
+            [0.111, 0.112, 2],
         ];
     }
 
     /**
      * @dataProvider provideNotEquals
      */
-    public function testNoteEquals($a, $b, $precision = 2)
+    public function testNotEquals(mixed $a, mixed $b, int $precision = 2): void
     {
         if ($precision == 2) {
             $this->assertFalse(decimal($a, $precision)->equals($b));
@@ -333,23 +352,23 @@ class DecimalTest extends TestCase
         $this->assertFalse(decimal($a, $precision)->equals(decimal($b, $precision)));
     }
 
-    public static function provideNotEquals()
+    public static function provideNotEquals(): array
     {
         return [
             [0.1, 0.12],
-            [0.111, 0.112, 3, 3],
+            [0.111, 0.112, 3],
         ];
     }
 
     /**
      * @dataProvider provideDivide
      */
-    public function testDivide($a, $b, $expected, $precision = 2)
+    public function testDivide(mixed $a, mixed $b, string $expected, int $precision = 2): void
     {
         $this->assertSame($expected, decimal($a, $precision)->divide($b)->toString());
     }
 
-    public static function provideDivide()
+    public static function provideDivide(): array
     {
         return [
             [0.1, 2, '0.05'],
@@ -359,10 +378,22 @@ class DecimalTest extends TestCase
     }
 
     /**
+     * Test high precision division
+     */
+    public function testHighPrecisionDivision(): void
+    {
+        // 1/3 should be accurate internally, but display based on precision
+        $decimal = decimal(1, 10)->divide(3);
+
+        $this->assertSame('0.3333333333', $decimal->toString());
+        $this->assertSame('0.33', $decimal->toString(2));
+    }
+
+    /**
      * @see https://3v4l.org/ps346
      *
      */
-    public function testFloatInconsistency()
+    public function testFloatInconsistency(): void
     {
         $a = 0.17;
         $b = 1 - 0.83; //0.17
@@ -374,7 +405,7 @@ class DecimalTest extends TestCase
 
         $this->assertTrue($decimal->isZero());
         $this->assertFalse($decimal->isPositive());
-        $this->assertFalse($decimal->isPositive());
+        $this->assertFalse($decimal->isNegative());
         $this->assertSame('0.00', (string) $decimal);
 
         $decimal = decimal($a)->sub($b);
@@ -382,7 +413,7 @@ class DecimalTest extends TestCase
         $this->assertTrue($decimal->isZero());
     }
 
-    public function testChaining()
+    public function testChaining(): void
     {
         $a = decimal(3.00)->sub(0.5)->add(0.01);
         $this->assertEquals('2.51', $a->toString());
@@ -397,12 +428,12 @@ class DecimalTest extends TestCase
         $this->assertTrue($c->isZeroOrNegative());
     }
 
-    public function testDecimalIsNotEqual()
+    public function testDecimalIsNotEqual(): void
     {
         $this->assertTrue(decimal(3)->notEquals(5));
     }
 
-    public function testComparePrecision()
+    public function testComparePrecision(): void
     {
         $this->expectException(RuntimeException::class);
 
@@ -412,7 +443,7 @@ class DecimalTest extends TestCase
         $a->equals($b);
     }
 
-    public function testIsBiggerThan()
+    public function testIsBiggerThan(): void
     {
         $a = 3.52;
         $b = decimal(4.8798);
@@ -420,7 +451,7 @@ class DecimalTest extends TestCase
         $this->assertTrue($b->isBiggerThan($a));
     }
 
-    public function testIsSmallerThan()
+    public function testIsSmallerThan(): void
     {
         $a = 3.52;
         $b = decimal(2.8798);
@@ -428,7 +459,7 @@ class DecimalTest extends TestCase
         $this->assertTrue($b->isSmallerThan($a));
     }
 
-    public function testIsBiggerOrEqualThan()
+    public function testIsBiggerOrEqualThan(): void
     {
         $a = 3.52;
         $b = decimal(4.8798);
@@ -438,7 +469,7 @@ class DecimalTest extends TestCase
         $this->assertTrue($b->isBiggerOrEqualThan($c));
     }
 
-    public function testIsSmallerOrEqualThan()
+    public function testIsSmallerOrEqualThan(): void
     {
         $a = decimal(3.52);
         $b = decimal(2.8798);
@@ -446,5 +477,41 @@ class DecimalTest extends TestCase
 
         $this->assertTrue($a->isSmallerOrEqualThan($a));
         $this->assertTrue($b->isSmallerOrEqualThan($c));
+    }
+
+    /**
+     * Test that BcMath\Number provides higher internal precision
+     */
+    public function testInternalPrecisionHigherThanDisplay(): void
+    {
+        // Perform calculation that would lose precision with floats
+        $a = decimal('1', 2);
+        $result = $a->divide(3)->multiply(3);
+
+        // Should be 1.00 due to internal high precision, not 0.99
+        $this->assertSame('1.00', $result->toString());
+    }
+
+    /**
+     * Test very large numbers
+     */
+    public function testLargeNumbers(): void
+    {
+        $decimal = new Decimal('99999999999999999999.99', 2);
+
+        $this->assertSame('99999999999999999999.99', $decimal->toString());
+        $this->assertTrue($decimal->isPositive());
+    }
+
+    /**
+     * Test very small numbers with high precision
+     */
+    public function testVerySmallNumbers(): void
+    {
+        $decimal = new Decimal('0.00000001', 8);
+
+        $this->assertSame('0.00000001', $decimal->toString());
+        $this->assertTrue($decimal->isPositive());
+        $this->assertFalse($decimal->isZero());
     }
 }

@@ -4,22 +4,33 @@ declare(strict_types=1);
 
 namespace Fruitcake\Decimal;
 
+use BcMath\Number;
+use InvalidArgumentException;
+use RuntimeException;
+
 final class Decimal
 {
-    protected string $value;
+    protected Number $value;
 
-    protected int $precision = 2;
+    protected int $precision;
+
+    /**
+     * Internal precision for calculations (higher than display precision for accuracy)
+     */
+    private const int INTERNAL_SCALE = 20;
 
     public function __construct(mixed $value, int $precision = 2)
     {
         $this->precision = $precision;
-        $this->setUnitValue($value * $this->getMultiplier());
+        $this->value = $this->toNumber($value);
     }
 
     public static function fromUnitValue(mixed $value, int $precision): self
     {
-        $decimal = new Decimal(0.0, $precision);
-        $decimal->setUnitValue($value);
+        $multiplier = new Number(10 ** $precision);
+        $number = new Number((string) $value);
+        $decimal = new self(0, $precision);
+        $decimal->value = $number->div($multiplier, self::INTERNAL_SCALE);
 
         return $decimal;
     }
@@ -28,11 +39,11 @@ final class Decimal
      * Parse the input from user input, with different comma/dot
      *
      * @param mixed $value
-     * @param $precision
+     * @param int $precision
      *
      * @return Decimal
      */
-    public static function parseLocale(mixed $value, $precision): self
+    public static function parseLocale(mixed $value, int $precision): self
     {
         if (!is_string($value)) {
             $value = (string) $value;
@@ -46,10 +57,10 @@ final class Decimal
             $value = '0' . $value;
         }
 
-        $value = str_replace([' ', '+', 'â‚¬'], '', $value);
+        $value = str_replace([' ', '+', '€'], '', $value);
 
         if (preg_match("/^-?[0-9]+(?:\.[0-9]{1,2})?$/", $value)) {
-            return new Decimal((float) $value, $precision);
+            return new Decimal($value, $precision);
         }
 
         $fmt = numfmt_create('nl_NL', \NumberFormatter::DECIMAL);
@@ -58,28 +69,28 @@ final class Decimal
         if ($result === false) {
             // Not a valid locale value and no decimal, assume it's a normal float value
             if (is_numeric($value) && !str_contains($value, ',')) {
-                return new Decimal((float) $value, $precision);
+                return new Decimal($value, $precision);
             }
 
-            throw new \InvalidArgumentException('Cannot parse decimal value `' . $value . '`: ' . numfmt_get_error_message($fmt));
+            throw new InvalidArgumentException('Cannot parse decimal value `' . $value . '`: ' . numfmt_get_error_message($fmt));
         }
 
-        return new Decimal($result, $precision);
+        return new Decimal((string) $result, $precision);
     }
 
     public function isZero(): bool
     {
-        return $this->getUnitValue() == '0';
+        return $this->value->compare(new Number('0')) === 0;
     }
 
     public function isPositive(): bool
     {
-        return $this->getUnitValue() > 0;
+        return $this->value->compare(new Number('0')) > 0;
     }
 
     public function isNegative(): bool
     {
-        return $this->getUnitValue() < 0;
+        return $this->value->compare(new Number('0')) < 0;
     }
 
     public function isZeroOrPositive(): bool
@@ -92,9 +103,24 @@ final class Decimal
         return $this->isZero() || $this->isNegative();
     }
 
-    public function getUnitValue(): mixed
+    /**
+     * Get the internal BcMath\Number value
+     */
+    public function getValue(): Number
     {
         return $this->value;
+    }
+
+    /**
+     * Get the unit value (for backwards compatibility)
+     * Returns the value multiplied by 10^precision as a string
+     */
+    public function getUnitValue(): string
+    {
+        $multiplier = new Number(10 ** $this->precision);
+        $unitValue = $this->value->mul($multiplier);
+
+        return $this->roundToString($unitValue, 0);
     }
 
     public function equals(mixed $value): bool
@@ -105,7 +131,8 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return $this->getUnitValue() === $value->getUnitValue();
+        // Compare at display precision
+        return $this->toString() === $value->toString();
     }
 
     public function isBiggerThan(mixed $value): bool
@@ -116,7 +143,7 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return $this->getUnitValue() > $value->getUnitValue();
+        return $this->value->compare($value->getValue()) > 0;
     }
 
     public function isBiggerOrEqualThan(mixed $value): bool
@@ -127,7 +154,7 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return $this->getUnitValue() >= $value->getUnitValue();
+        return $this->value->compare($value->getValue()) >= 0;
     }
 
     public function isSmallerThan(mixed $value): bool
@@ -138,7 +165,7 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return $this->getUnitValue() < $value->getUnitValue();
+        return $this->value->compare($value->getValue()) < 0;
     }
 
     public function isSmallerOrEqualThan(mixed $value): bool
@@ -149,18 +176,12 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return $this->getUnitValue() <= $value->getUnitValue();
+        return $this->value->compare($value->getValue()) <= 0;
     }
 
     public function notEquals(mixed $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() !== $value->getUnitValue();
+        return !$this->equals($value);
     }
 
     public function add(mixed $value): self
@@ -171,7 +192,10 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return Decimal::fromUnitValue($this->getUnitValue() + $value->getUnitValue(), $this->getPrecision());
+        $result = new self(0, $this->getPrecision());
+        $result->value = $this->value->add($value->getValue());
+
+        return $result;
     }
 
     public function sub(mixed $value): self
@@ -182,32 +206,91 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        return Decimal::fromUnitValue($this->getUnitValue() - $value->getUnitValue(), $this->getPrecision());
+        $result = new self(0, $this->getPrecision());
+        $result->value = $this->value->sub($value->getValue());
+
+        return $result;
     }
 
     public function multiply(mixed $multiplier): self
     {
-        return Decimal::fromUnitValue($this->getUnitValue() * $multiplier, $this->getPrecision());
+        $multiplierNumber = $this->toNumber($multiplier);
+        $result = new self(0, $this->getPrecision());
+        $result->value = $this->value->mul($multiplierNumber);
+
+        return $result;
     }
 
-    public function divide(mixed $division): self
+    public function divide(mixed $divisor): self
     {
-        return Decimal::fromUnitValue($this->getUnitValue() / $division, $this->getPrecision());
+        $divisorNumber = $this->toNumber($divisor);
+        $result = new self(0, $this->getPrecision());
+        $result->value = $this->value->div($divisorNumber, self::INTERNAL_SCALE);
+
+        return $result;
     }
 
     public function toString(?int $precision = null): string
     {
-        return $this->parseAsString($this->getUnitValue() / $this->getMultiplier(), $precision);
+        $displayPrecision = $precision ?? $this->getPrecision();
+
+        return $this->roundToString($this->value, $displayPrecision);
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->toString();
     }
 
-    private function parseAsString(mixed $value, ?int $precision = null): string
+    private function toNumber(mixed $value): Number
     {
-        return number_format($value, !is_null($precision) ? $precision : $this->getPrecision(), '.', '');
+        if ($value instanceof Number) {
+            return $value;
+        }
+
+        if ($value instanceof Decimal) {
+            return $value->getValue();
+        }
+
+        // Convert to string to avoid float precision issues
+        $stringValue = is_float($value) ? sprintf('%.14g', $value) : (string) $value;
+
+        return new Number($stringValue);
+    }
+
+    /**
+     * Round a Number to a string with the given precision
+     */
+    private function roundToString(Number $number, int $precision): string
+    {
+        $rounded = $number->round($precision);
+
+        // Format with the correct number of decimal places
+        $str = (string) $rounded;
+
+        // Handle the decimal formatting
+        if ($precision === 0) {
+            // For zero precision, return just the integer part
+            $pos = strpos($str, '.');
+            return $pos !== false ? substr($str, 0, $pos) : $str;
+        }
+
+        // Ensure we have the decimal point
+        if (!str_contains($str, '.')) {
+            $str .= '.';
+        }
+
+        // Pad with zeros to reach the required precision
+        $pos = strpos($str, '.');
+        $currentDecimals = strlen($str) - $pos - 1;
+
+        if ($currentDecimals < $precision) {
+            $str .= str_repeat('0', $precision - $currentDecimals);
+        } elseif ($currentDecimals > $precision) {
+            $str = substr($str, 0, $pos + $precision + 1);
+        }
+
+        return $str;
     }
 
     private function getPrecision(): int
@@ -215,20 +298,10 @@ final class Decimal
         return $this->precision;
     }
 
-    private function getMultiplier(): int
-    {
-        return 10 ** $this->getPrecision();
-    }
-
-    private function setUnitValue(mixed $value): void
-    {
-        $this->value = number_format($value, 0, '', '');
-    }
-
     private function comparePrecision(self $other): void
     {
         if ($other->getPrecision() !== $this->getPrecision()) {
-            throw new \RuntimeException('Precision must match');
+            throw new RuntimeException('Precision must match');
         }
     }
 }

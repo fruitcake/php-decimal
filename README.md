@@ -1,32 +1,64 @@
-# Decimal class for PHP
+# PHP Decimal
 
-[![Unit Tests](https://github.com/fruitcake/php-decimal/actions/workflows/run-tests.yml/badge.svg)](https://github.com/fruitcake/php-decimal/actions)
-[![PHPStan Level 5](https://img.shields.io/badge/PHPStan-Level%205-blue)](https://github.com/fruitcake/php-decimal/actions)
-[![Code Coverage](https://img.shields.io/badge/CodeCoverage-100%25-brightgreen)](https://github.com/fruitcake/php-decimal/actions/workflows/run-coverage.yml)
-[![Packagist License](https://poser.pugx.org/fruitcake/php-decimal/license.png)](http://choosealicense.com/licenses/mit/)
-[![Latest Stable Version](https://poser.pugx.org/fruitcake/php-decimal/version.png)](https://packagist.org/packages/fruitcake/php-decimal)
-[![Total Downloads](https://poser.pugx.org/fruitcake/php-decimal/d/total.png)](https://packagist.org/packages/fruitcake/php-decimal)
-[![Fruitcake](https://img.shields.io/badge/Powered%20By-Fruitcake-b2bc35.svg)](https://fruitcake.nl/)
+A simple decimal class for PHP that avoids floating-point precision issues by using `BcMath\Number` internally.
 
-Library for handling decimals in PHP
+## Requirements
+
+- PHP 8.4+
+- ext-bcmath
+- ext-intl
 
 ## Installation
 
-Require `fruitcake/php-decimal` using composer.
+```bash
+composer require fruitcake/php-decimal
+```
 
-### Example: using the library
+## Usage
 
 ```php
-<?php
-
 use Fruitcake\Decimal\Decimal;
 
-$decimal = new Decimal('1');
-$value = $decimal->sub('0.8');
+// Create a decimal with precision 2
+$decimal = new Decimal(1.23, 2);
 
-echo $decimal->toString(2); // "0.20"
+// Or use the helper
+$decimal = decimal(1.23);
+
+// Arithmetic operations
+$result = $decimal->add(0.5);      // 1.73
+$result = $decimal->sub(0.5);      // 0.73
+$result = $decimal->multiply(2);   // 2.46
+$result = $decimal->divide(2);     // 0.62
+
+// Comparisons
+$decimal->equals(1.23);            // true
+$decimal->isBiggerThan(1.00);      // true
+$decimal->isSmallerThan(2.00);     // true
+
+// Parse locale-formatted values (nl_NL)
+$decimal = Decimal::parseLocale('1.234,56', 2);  // 1234.56
+
+// Output
+echo $decimal->toString();         // "1.23"
+echo $decimal->toString(4);        // "1.2300" (custom precision)
+echo (string) $decimal;            // "1.23"
+
+// Access internal BcMath\Number
+$number = $decimal->getValue();    // BcMath\Number instance
 ```
+
+## Why BcMath\Number?
+
+PHP's native float type can cause precision issues:
+
+```php
+$a = 0.1 + 0.2;
+var_dump($a == 0.3); // false!
+```
+
+This library uses PHP 8.4's `BcMath\Number` class internally, which provides arbitrary-precision arithmetic. The precision parameter controls output formatting, while internal calculations maintain higher precision.
 
 ## License
 
-Released under the MIT License, see [LICENSE](LICENSE).
+MIT
