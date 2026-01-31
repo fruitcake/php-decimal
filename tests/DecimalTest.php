@@ -541,4 +541,45 @@ class DecimalTest extends TestCase
         $this->assertEquals('1.73', $total2);
         $this->assertEquals('1.73', $total);
     }
+
+    /**
+     * Test BcMath\Number as constructor input
+     */
+    public function testConstructWithNumber(): void
+    {
+        $number = new Number('123.45');
+        $decimal = new Decimal($number, 2);
+
+        $this->assertSame('123.45', $decimal->toString());
+        $this->assertSame('12345', $decimal->getUnitValue());
+    }
+
+    /**
+     * Test BcMath\Number in arithmetic operations
+     */
+    public function testArithmeticWithNumber(): void
+    {
+        $decimal = new Decimal('10.00', 2);
+        $number = new Number('2.5');
+
+        $this->assertSame('12.50', $decimal->add($number)->toString());
+        $this->assertSame('7.50', $decimal->sub($number)->toString());
+        $this->assertSame('25.00', $decimal->multiply($number)->toString());
+        $this->assertSame('4.00', $decimal->divide($number)->toString());
+    }
+
+    /**
+     * Test BcMath\Number in comparison operations
+     */
+    public function testComparisonWithNumber(): void
+    {
+        $decimal = new Decimal('10.00', 2);
+        $bigger = new Number('15');
+        $smaller = new Number('5');
+        $equal = new Number('10');
+
+        $this->assertTrue($decimal->isSmallerThan($bigger));
+        $this->assertTrue($decimal->isBiggerThan($smaller));
+        $this->assertTrue($decimal->equals($equal));
+    }
 }
