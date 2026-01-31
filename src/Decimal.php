@@ -80,16 +80,25 @@ final class Decimal
 
     public function isZero(): bool
     {
-        return $this->value->compare(new Number('0')) === 0;
+        // Check if value rounds to zero at display precision (backwards compatible)
+        return $this->toString() === $this->roundToString(new Number('0'), $this->precision);
     }
 
     public function isPositive(): bool
     {
+        // Check based on rounded display value for backwards compatibility
+        if ($this->isZero()) {
+            return false;
+        }
         return $this->value->compare(new Number('0')) > 0;
     }
 
     public function isNegative(): bool
     {
+        // Check based on rounded display value for backwards compatibility
+        if ($this->isZero()) {
+            return false;
+        }
         return $this->value->compare(new Number('0')) < 0;
     }
 
@@ -253,7 +262,23 @@ final class Decimal
         }
 
         // Convert to string to avoid float precision issues
-        $stringValue = is_float($value) ? sprintf('%.14g', $value) : (string) $value;
+        if (is_float($value)) {
+            // Handle very small numbers that would otherwise be in scientific notation
+            // If the absolute value is less than 1e-14, treat as zero
+            if (abs($value) < 1e-14) {
+                $stringValue = '0';
+            } else {
+                // Use number_format to avoid scientific notation
+                $stringValue = number_format($value, self::INTERNAL_SCALE, '.', '');
+                // Trim trailing zeros after decimal point
+                $stringValue = rtrim(rtrim($stringValue, '0'), '.');
+                if ($stringValue === '' || $stringValue === '-') {
+                    $stringValue = '0';
+                }
+            }
+        } else {
+            $stringValue = (string) $value;
+        }
 
         return new Number($stringValue);
     }
