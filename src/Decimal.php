@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Fruitcake\Decimal;
 
 use BcMath\Number;
+use DivisionByZeroError;
 use InvalidArgumentException;
 use RuntimeException;
 
+/**
+ * Immutable decimal class using BcMath\Number for arbitrary precision arithmetic.
+ * All arithmetic operations return new instances.
+ */
 final class Decimal
 {
     protected Number $value;
@@ -36,14 +41,15 @@ final class Decimal
     }
 
     /**
-     * Parse the input from user input, with different comma/dot
+     * Parse the input from user input, with different comma/dot formats
      *
      * @param mixed $value
      * @param int $precision
+     * @param string|null $locale Locale for parsing (null = system default)
      *
      * @return Decimal
      */
-    public static function parseLocale(mixed $value, int $precision): self
+    public static function parseLocale(mixed $value, int $precision, ?string $locale = null): self
     {
         if (!is_string($value)) {
             $value = (string) $value;
@@ -63,7 +69,7 @@ final class Decimal
             return new Decimal($value, $precision);
         }
 
-        $fmt = numfmt_create('nl_NL', \NumberFormatter::DECIMAL);
+        $fmt = numfmt_create($locale ?? setlocale(LC_NUMERIC, '0') ?: 'en_US', \NumberFormatter::DECIMAL);
 
         $result = numfmt_parse($fmt, $value);
         if ($result === false) {
@@ -132,7 +138,12 @@ final class Decimal
         return $this->roundToString($unitValue, 0);
     }
 
-    public function equals(mixed $value): bool
+    /**
+     * Compare this decimal with another value
+     *
+     * @return int -1 if less than, 0 if equal, 1 if greater than
+     */
+    public function compare(mixed $value): int
     {
         if (!($value instanceof Decimal)) {
             $value = new Decimal($value, $this->getPrecision());
@@ -140,57 +151,41 @@ final class Decimal
 
         $this->comparePrecision($value);
 
-        // Compare at display precision
-        return $this->toString() === $value->toString();
+        // Compare at display precision for consistency
+        $thisRounded = $this->value->round($this->precision);
+        $otherRounded = $value->getValue()->round($this->precision);
+
+        return $thisRounded->compare($otherRounded);
+    }
+
+    public function equals(mixed $value): bool
+    {
+        return $this->compare($value) === 0;
     }
 
     public function isBiggerThan(mixed $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->value->compare($value->getValue()) > 0;
+        return $this->compare($value) > 0;
     }
 
     public function isBiggerOrEqualThan(mixed $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->value->compare($value->getValue()) >= 0;
+        return $this->compare($value) >= 0;
     }
 
     public function isSmallerThan(mixed $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->value->compare($value->getValue()) < 0;
+        return $this->compare($value) < 0;
     }
 
     public function isSmallerOrEqualThan(mixed $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->value->compare($value->getValue()) <= 0;
+        return $this->compare($value) <= 0;
     }
 
     public function notEquals(mixed $value): bool
     {
-        return !$this->equals($value);
+        return $this->compare($value) !== 0;
     }
 
     public function add(mixed $value): self
@@ -233,8 +228,36 @@ final class Decimal
     public function divide(mixed $divisor): self
     {
         $divisorNumber = $this->toNumber($divisor);
+
+        if ($divisorNumber->compare(new Number('0')) === 0) {
+            throw new DivisionByZeroError('Division by zero');
+        }
+
         $result = new self(0, $this->getPrecision());
         $result->value = $this->value->div($divisorNumber, self::INTERNAL_SCALE);
+
+        return $result;
+    }
+
+    /**
+     * Get the absolute value
+     */
+    public function abs(): self
+    {
+        if ($this->isNegative()) {
+            return $this->negate();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Negate the value (change sign)
+     */
+    public function negate(): self
+    {
+        $result = new self(0, $this->getPrecision());
+        $result->value = $this->value->mul(new Number('-1'));
 
         return $result;
     }
@@ -294,6 +317,14 @@ final class Decimal
 
         // Format with the correct number of decimal places
         $str = (string) $rounded;
+
+        // Handle negative precision (rounding to tens, hundreds, etc.)
+        if ($precision < 0) {
+            // BcMath\Number::round handles negative precision correctly
+            // Just return the integer result
+            $pos = strpos($str, '.');
+            return $pos !== false ? substr($str, 0, $pos) : $str;
+        }
 
         // Handle the decimal formatting
         if ($precision === 0) {

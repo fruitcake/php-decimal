@@ -582,4 +582,96 @@ class DecimalTest extends TestCase
         $this->assertTrue($decimal->isBiggerThan($smaller));
         $this->assertTrue($decimal->equals($equal));
     }
+
+    /**
+     * Test compare() method returns -1, 0, 1
+     */
+    public function testCompareMethod(): void
+    {
+        $decimal = new Decimal('10.00', 2);
+
+        $this->assertSame(-1, $decimal->compare('15.00'));
+        $this->assertSame(0, $decimal->compare('10.00'));
+        $this->assertSame(1, $decimal->compare('5.00'));
+    }
+
+    /**
+     * Test comparison consistency at display precision
+     */
+    public function testComparisonConsistency(): void
+    {
+        $a = new Decimal('1.004', 2);
+        $b = new Decimal('1.006', 2);
+
+        // Both round to 1.00, so should be equal
+        $this->assertTrue($a->equals($b));
+        $this->assertFalse($a->isBiggerThan($b));
+        $this->assertFalse($a->isSmallerThan($b));
+        $this->assertTrue($a->isBiggerOrEqualThan($b));
+        $this->assertTrue($a->isSmallerOrEqualThan($b));
+    }
+
+    /**
+     * Test abs() method
+     */
+    public function testAbs(): void
+    {
+        $positive = new Decimal('5.50', 2);
+        $negative = new Decimal('-5.50', 2);
+        $zero = new Decimal('0.00', 2);
+
+        $this->assertSame('5.50', $positive->abs()->toString());
+        $this->assertSame('5.50', $negative->abs()->toString());
+        $this->assertSame('0.00', $zero->abs()->toString());
+    }
+
+    /**
+     * Test negate() method
+     */
+    public function testNegate(): void
+    {
+        $positive = new Decimal('5.50', 2);
+        $negative = new Decimal('-5.50', 2);
+        $zero = new Decimal('0.00', 2);
+
+        $this->assertSame('-5.50', $positive->negate()->toString());
+        $this->assertSame('5.50', $negative->negate()->toString());
+        $this->assertSame('0.00', $zero->negate()->toString());
+    }
+
+    /**
+     * Test division by zero throws exception
+     */
+    public function testDivisionByZero(): void
+    {
+        $this->expectException(\DivisionByZeroError::class);
+
+        decimal('10.00')->divide('0');
+    }
+
+    /**
+     * Test parseLocale with custom locale
+     */
+    public function testParseLocaleWithCustomLocale(): void
+    {
+        // German format: 1.234,56
+        $decimal = Decimal::parseLocale('1.234,56', 2, 'de_DE');
+        $this->assertSame('1234.56', $decimal->toString());
+
+        // US format: 1,234.56
+        $decimal = Decimal::parseLocale('1,234.56', 2, 'en_US');
+        $this->assertSame('1234.56', $decimal->toString());
+    }
+
+    /**
+     * Test negative precision (rounding to tens, hundreds)
+     */
+    public function testNegativePrecision(): void
+    {
+        $decimal = new Decimal('1234.56', 2);
+
+        $this->assertSame('1235', $decimal->toString(0));
+        $this->assertSame('1230', $decimal->toString(-1));
+        $this->assertSame('1200', $decimal->toString(-2));
+    }
 }
