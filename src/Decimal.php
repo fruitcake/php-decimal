@@ -268,8 +268,10 @@ final class Decimal
             if (abs($value) < 1e-14) {
                 $stringValue = '0';
             } else {
-                // Use number_format to avoid scientific notation
-                $stringValue = number_format($value, self::INTERNAL_SCALE, '.', '');
+                // Pre-round to 10 decimal places to correct floating-point representation errors
+                // e.g., 1.345 in float is ~1.34499999... which should be corrected to 1.345
+                $corrected = round($value, 10);
+                $stringValue = number_format($corrected, 10, '.', '');
                 // Trim trailing zeros after decimal point
                 $stringValue = rtrim(rtrim($stringValue, '0'), '.');
                 if ($stringValue === '' || $stringValue === '-') {
