@@ -535,7 +535,7 @@ class DecimalTest extends TestCase
      */
     public function testPercentage(): void
     {
-        $total = decimal('2.30')->sub(decimal('2.30')->multiply('0.25')->toString())->toString();
+        $total = decimal('2.30')->sub(decimal('2.30')->multiply('0.25'))->toString();
         $total2 = decimal('2.30')->multiply('0.75')->toString();
 
         $this->assertEquals('1.73', $total2);
