@@ -69,7 +69,8 @@ final class Decimal
             return new Decimal($value, $precision);
         }
 
-        $fmt = numfmt_create($locale ?? setlocale(LC_NUMERIC, '0') ?: 'en_US', \NumberFormatter::DECIMAL);
+        // Default to nl_NL for backwards compatibility
+        $fmt = numfmt_create($locale ?? 'nl_NL', \NumberFormatter::DECIMAL);
 
         $result = numfmt_parse($fmt, $value);
         if ($result === false) {

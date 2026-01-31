@@ -600,8 +600,9 @@ class DecimalTest extends TestCase
      */
     public function testComparisonConsistency(): void
     {
+        // 1.004 and 1.003 both round to 1.00
         $a = new Decimal('1.004', 2);
-        $b = new Decimal('1.006', 2);
+        $b = new Decimal('1.003', 2);
 
         // Both round to 1.00, so should be equal
         $this->assertTrue($a->equals($b));
@@ -609,6 +610,11 @@ class DecimalTest extends TestCase
         $this->assertFalse($a->isSmallerThan($b));
         $this->assertTrue($a->isBiggerOrEqualThan($b));
         $this->assertTrue($a->isSmallerOrEqualThan($b));
+
+        // 1.006 rounds to 1.01, so should NOT be equal to 1.004 (1.00)
+        $c = new Decimal('1.006', 2);
+        $this->assertFalse($a->equals($c));
+        $this->assertTrue($a->isSmallerThan($c));
     }
 
     /**
