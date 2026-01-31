@@ -12,35 +12,33 @@ jobs:
 
     strategy:
       matrix:
-        php: [8.1, 8.2, 8.3, 8.4, 8.5]
+        php: ['8.4', '8.5']
         dependency-version: [prefer-stable]
 
-    name: PHP${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }}
+    name: PHP${{ matrix.php }} - ${{ matrix.dependency-version }}
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php }}
-        extensions: mbstring
+        extensions: mbstring, bcmath, intl
 
     - name: Configure matchers
       uses: mheap/phpunit-matcher-action@v1
 
     - name: Install dependencies
       run: |
-        composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-suggest --with-all-dependencies
+        composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --with-all-dependencies
 
     - name: Execute Unit Tests
       run: composer test
 
     - name: Analyse with PHPStan
       run: composer analyse
-      if: matrix.os == 'ubuntu-latest'
 
     - name: Check PSR-12 Codestyle
-      run: composer test
-      if: matrix.os == 'ubuntu-latest'
+      run: composer check-style
