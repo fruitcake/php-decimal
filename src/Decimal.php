@@ -5,19 +5,23 @@ declare(strict_types=1);
 namespace Fruitcake\Decimal;
 
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 
 final class Decimal
 {
     protected BigDecimal $bigDecimal;
+    protected int $precision = 2;
 
     public function __construct(mixed $value, int $precision = 2)
     {
+        $this->precision = $precision;
+
         if ($value instanceof self) {
             $this->bigDecimal = clone $value->getInternalDecimal();
         } elseif ($value instanceof BigDecimal) {
             $this->bigDecimal = clone $value;
         } else {
-            $this->bigDecimal = BigDecimal::of(number_format((float)$value, $precision, '.', ''));
+            $this->bigDecimal = BigDecimal::of($value)->toScale($precision, RoundingMode::HALF_UP);
         }
     }
 
@@ -131,28 +135,30 @@ final class Decimal
 
     public function add(mixed $value): self
     {
-        return new self($this->bigDecimal->plus($this->prepareValue($value)));
+        return new self($this->bigDecimal->plus($this->prepareValue($value)), $this->precision);
     }
 
     public function sub(mixed $value): self
     {
-        return new self($this->bigDecimal->minus($this->prepareValue($value)));
+        return new self($this->bigDecimal->minus($this->prepareValue($value)), $this->precision);
     }
 
     public function multiply(mixed $multiplier): self
     {
-        return new self($this->bigDecimal->multipliedBy($this->prepareValue($multiplier)));
+        return new self($this->bigDecimal->multipliedBy($this->prepareValue($multiplier)), $this->precision);
     }
 
     public function divide(mixed $division): self
     {
-        return new self($this->bigDecimal->dividedBy($this->prepareValue($division)));
+        return new self($this->bigDecimal->dividedBy($this->prepareValue($division)), $this->precision);
     }
 
     public function toString(int $precision = null): string
     {
-        return number_format($this->bigDecimal->toFloat(), !is_null($precision) ? $precision : $this->bigDecimal->getScale(), '.', '');
-    }
+        $precision = $precision ?? $this->precision;
+
+        return (string) $this->bigDecimal->toScale($precision, RoundingMode::HALF_UP);
+   }
 
     public function __toString()
     {
