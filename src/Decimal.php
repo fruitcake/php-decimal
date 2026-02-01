@@ -7,10 +7,10 @@ namespace Fruitcake\Decimal;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 
-final class Decimal
+final readonly class Decimal
 {
-    protected BigDecimal $bigDecimal;
-    protected int $precision = 2;
+    private BigDecimal $bigDecimal;
+    private int $precision;
 
     public function __construct(mixed $value, int $precision = 2)
     {
@@ -165,12 +165,12 @@ final class Decimal
         return $this->toString();
     }
 
-    protected function prepareValue($value): BigDecimal
+    private function prepareValue($value): BigDecimal
     {
         return $value instanceof self ? $value->getInternalDecimal() : (new static($value))->getInternalDecimal();
     }
 
-    protected function getInternalDecimal(): BigDecimal
+    private function getInternalDecimal(): BigDecimal
     {
         return $this->bigDecimal;
     }
