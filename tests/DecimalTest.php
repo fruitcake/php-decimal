@@ -328,7 +328,6 @@ class DecimalTest extends TestCase
      */
     public function testNoteEquals($a, $b, $precision = 2)
     {
-        var_dump(decimal($a, $precision));
         if ($precision == 2) {
             $this->assertFalse(decimal($a, $precision)->equals($b));
         }
@@ -402,8 +401,6 @@ class DecimalTest extends TestCase
 
     public function testPreservesInternalPrecision()
     {
-        $this->markTestSkipped('Higher internal precision is currently not preserved');
-        
         $a = decimal('2.30')->multiply('0.75')->toString();
         $this->assertEquals('1.73', $a);
 
