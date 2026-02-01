@@ -52,7 +52,7 @@ final readonly class Decimal
             $value = '0' . $value;
         }
 
-        $value = str_replace([' ', '+', 'â‚¬'], '', $value);
+        $value = str_replace([' ', '+', '€'], '', $value);
 
         if (preg_match("/^-?[0-9]+(?:\.[0-9]{1,2})?$/", $value)) {
             return new Decimal((float) $value, $precision);

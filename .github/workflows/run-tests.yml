@@ -26,7 +26,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php }}
-        extensions: mbstring
+        extensions: mbstring, intl
 
     - name: Configure matchers
       uses: mheap/phpunit-matcher-action@v1
