@@ -165,7 +165,7 @@ final class Decimal
         return $this->toString();
     }
 
-    protected function prepareValue($value): static
+    protected function prepareValue($value): BigDecimal
     {
         return $value instanceof self ? $value->getInternalDecimal() : (new static($value))->getInternalDecimal();
     }
