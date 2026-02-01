@@ -66,7 +66,7 @@ class DecimalTest extends TestCase
             ['- 2', '-2.00'],
             ['- 2.00', '-2.00'],
             ['- 2. 15', '-2.15'],
-            ['â‚¬59,-', '59.00'],
+            ['€59,-', '59.00'],
             ['1', '1.00'],
             [1.2, '1.20'],
             ['1.2', '1.20'],
@@ -88,6 +88,11 @@ class DecimalTest extends TestCase
             ['-100.000', '-100000.00'],
             ['50.30000000000000', '50.30'],
             ['50.80000000000001', '50.80'],
+            ['€50', '50.00'],
+            ['€50,00', '50.00'],
+            ['€50,-', '50.00'],
+            ['€50,01', '50.01'],
+            ['€50.01', '50.01'],
         ];
     }
 
@@ -402,7 +407,7 @@ class DecimalTest extends TestCase
     public function testPreservesInternalPrecision()
     {
         $this->markTestSkipped('Higher internal precision is currently not preserved');
-        
+
         $a = decimal('2.30')->multiply('0.75')->toString();
         $this->assertEquals('1.73', $a);
 
