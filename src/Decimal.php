@@ -33,7 +33,7 @@ final class Decimal
     /**
      * Parse the input from user input, with different comma/dot
      *
-     * @param string $value
+     * @param mixed $value
      * @param $precision
      *
      * @return Decimal
@@ -153,24 +153,24 @@ final class Decimal
         return new self($this->bigDecimal->dividedBy($this->prepareValue($division)), $this->precision);
     }
 
-    public function toString(int $precision = null): string
+    public function toString(?int $precision = null): string
     {
         $precision = $precision ?? $this->precision;
 
         return (string) $this->bigDecimal->toScale($precision, RoundingMode::HALF_UP);
-   }
+    }
 
     public function __toString()
     {
         return $this->toString();
     }
 
-    protected function prepareValue($value)
+    protected function prepareValue($value): static
     {
         return $value instanceof self ? $value->getInternalDecimal() : (new static($value))->getInternalDecimal();
     }
 
-    protected function getInternalDecimal()
+    protected function getInternalDecimal(): BigDecimal
     {
         return $this->bigDecimal;
     }
