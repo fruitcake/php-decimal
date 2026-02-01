@@ -298,6 +298,8 @@ class DecimalTest extends TestCase
             [0.1, 2, '0.20'],
             ['2', '2', '4.00'],
             ['2.0', '2', '4', 0],
+            ['1.0', '17.40', '17.40', 2],
+            ['17.40', '1.00', '17.40', 2],
         ];
     }
 
@@ -395,6 +397,18 @@ class DecimalTest extends TestCase
         $c = decimal(3.00)->sub(0.5)->add('-2.5');
         $this->assertTrue($c->isZero());
         $this->assertTrue($c->isZeroOrNegative());
+    }
+
+    public function testPreservesInternalPrecision()
+    {
+        $this->markTestSkipped('Higher internal precision is currently not preserved');
+        
+        $a = decimal('2.30')->multiply('0.75')->toString();
+        $this->assertEquals('1.73', $a);
+
+        $b = decimal('2.30')->sub(decimal('2.30')->multiply('0.25'))->toString();
+        $this->assertEquals('1.73', $b);
+        $this->assertEquals($a, $b);
     }
 
     public function testDecimalIsNotEqual()
