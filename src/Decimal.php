@@ -169,7 +169,7 @@ final readonly class Decimal
 
     private function prepareValue($value): BigDecimal
     {
-        return $value instanceof self ? $value->getInternalDecimal() : (new static($value))->getInternalDecimal();
+        return $value instanceof self ? $value->getInternalDecimal() : (new self($value))->getInternalDecimal();
     }
 
     private function getInternalDecimal(): BigDecimal
