@@ -104,47 +104,47 @@ final readonly class Decimal
         return $this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
 
-    public function isBiggerThan(self|BigDecimal|int|float|string $value): bool
+    public function isBiggerThan(self|int|float|string $value): bool
     {
         return $this->bigDecimal->isGreaterThan($this->prepareValue($value));
     }
 
-    public function isBiggerOrEqualThan(self|BigDecimal|int|float|string $value): bool
+    public function isBiggerOrEqualThan(self|int|float|string $value): bool
     {
         return $this->bigDecimal->isGreaterThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function isSmallerThan(self|BigDecimal|int|float|string $value): bool
+    public function isSmallerThan(self|int|float|string $value): bool
     {
         return $this->bigDecimal->isLessThan($this->prepareValue($value));
     }
 
-    public function isSmallerOrEqualThan(self|BigDecimal|int|float|string $value): bool
+    public function isSmallerOrEqualThan(self|int|float|string $value): bool
     {
         return $this->bigDecimal->isLessThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function notEquals(self|BigDecimal|int|float|string $value): bool
+    public function notEquals(self|int|float|string $value): bool
     {
         return !$this->equals($this->prepareValue($value));
     }
 
-    public function add(self|BigDecimal|int|float|string $value): self
+    public function add(self|int|float|string $value): self
     {
         return new self($this->bigDecimal->plus($this->prepareValue($value)), $this->precision);
     }
 
-    public function sub(self|BigDecimal|int|float|string $value): self
+    public function sub(self|int|float|string $value): self
     {
         return new self($this->bigDecimal->minus($this->prepareValue($value)), $this->precision);
     }
 
-    public function multiply(self|BigDecimal|int|float|string $multiplier): self
+    public function multiply(self|int|float|string $multiplier): self
     {
         return new self($this->bigDecimal->multipliedBy($this->prepareValue($multiplier)), $this->precision);
     }
 
-    public function divide(self|BigDecimal|int|float|string $division): self
+    public function divide(self|int|float|string $division): self
     {
         $result = $this->bigDecimal->dividedBy($this->prepareValue($division), null, RoundingMode::HALF_UP);
 
