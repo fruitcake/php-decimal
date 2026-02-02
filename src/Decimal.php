@@ -150,7 +150,9 @@ final readonly class Decimal
 
     public function divide(mixed $division): self
     {
-        return new self($this->bigDecimal->dividedBy($this->prepareValue($division)), $this->precision);
+        $result = $this->bigDecimal->dividedBy($this->prepareValue($division), null, RoundingMode::HALF_UP);
+
+        return new self($result, $this->precision);
     }
 
     public function toString(?int $precision = null): string
