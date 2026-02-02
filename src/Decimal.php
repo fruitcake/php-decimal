@@ -99,7 +99,7 @@ final readonly class Decimal
         return $this->bigDecimal->getUnscaledValue();
     }
 
-    public function equals(self|BigDecimal|int|float|string $value): bool
+    public function equals(self|int|float|string $value): bool
     {
         return $this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
@@ -126,7 +126,7 @@ final readonly class Decimal
 
     public function notEquals(self|int|float|string $value): bool
     {
-        return !$this->equals($this->prepareValue($value));
+        return !$this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
 
     public function add(self|int|float|string $value): self
