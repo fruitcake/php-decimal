@@ -133,8 +133,6 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
-     * @param $formatted
      *
      * @dataProvider provideDecimalFormats
      */
@@ -165,12 +163,10 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
-     * @param int $precision
      *
      * @dataProvider provideZeros
      */
-    public function testIsZero($value, $precision = 2)
+    public function testIsZero($value, int $precision = 2)
     {
         $decimal = new Decimal($value, $precision);
 
@@ -194,12 +190,10 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
-     * @param int $precision
      *
      * @dataProvider providePositives
      */
-    public function testIsPositive($value, $precision = 2)
+    public function testIsPositive($value, int $precision = 2)
     {
         $decimal = new Decimal($value, $precision);
 
@@ -221,12 +215,10 @@ class DecimalTest extends TestCase
     }
 
     /**
-     * @param $value
-     * @param int $precision
      *
      * @dataProvider provideNegatives
      */
-    public function testIsNegative($value, $precision = 2)
+    public function testIsNegative($value, int $precision = 2)
     {
         $decimal = new Decimal($value, $precision);
 

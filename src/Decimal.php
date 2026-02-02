@@ -33,18 +33,14 @@ final readonly class Decimal
     /**
      * Parse the input from user input, with different comma/dot
      *
-     * @param mixed $value
-     * @param $precision
-     *
-     * @return Decimal
      */
-    public static function parseLocale(mixed $value, $precision): self
+    public static function parseLocale(mixed $value, int $precision = 2): self
     {
         if (!is_string($value)) {
             $value = (string) $value;
         }
 
-        if ($value == '') {
+        if ($value === '') {
             $value = '0.00';
         }
         // Check if start with a dot
@@ -54,20 +50,20 @@ final readonly class Decimal
 
         $value = str_replace([' ', '+', '€'], '', $value);
 
-        if (preg_match("/^-?[0-9]+(?:\.[0-9]{1,2})?$/", $value)) {
+        if (preg_match("/^-?[0-9]+(?:\.[0-9]{1,2})?$/", $value) === 1) {
             return new Decimal((float) $value, $precision);
         }
 
         $fmt = numfmt_create('nl_NL', \NumberFormatter::DECIMAL);
 
-        $result = numfmt_parse($fmt, $value);
+        $result = $fmt !== null ? numfmt_parse($fmt, $value) : false;
         if ($result === false) {
             // Not a valid locale value and no decimal, assume it's a normal float value
             if (is_numeric($value) && !str_contains($value, ',')) {
                 return new Decimal((float) $value, $precision);
             }
 
-            throw new \InvalidArgumentException('Cannot parse decimal value `' . $value . '`: ' . numfmt_get_error_message($fmt));
+            throw new \InvalidArgumentException('Cannot parse decimal value `' . $value . '`: ' . ($fmt !== null ? numfmt_get_error_message($fmt) : 'Not NumberFormatter available'));
         }
 
         return new Decimal($result, $precision);
