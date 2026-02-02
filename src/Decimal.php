@@ -4,31 +4,37 @@ declare(strict_types=1);
 
 namespace Fruitcake\Decimal;
 
-final class Decimal
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
+
+final readonly class Decimal
 {
-    protected string $value;
+    private BigDecimal $bigDecimal;
+    private int $precision;
 
-    protected int $precision = 2;
-
-    public function __construct(mixed $value, int $precision = 2)
+    public function __construct(self|BigDecimal|int|float|string $value, int $precision = 2)
     {
         $this->precision = $precision;
-        $this->setUnitValue($value * $this->getMultiplier());
+
+        if ($value instanceof self) {
+            $this->bigDecimal = clone $value->getInternalDecimal();
+        } elseif ($value instanceof BigDecimal) {
+            $this->bigDecimal = clone $value;
+        } else {
+            $this->bigDecimal = BigDecimal::of((string) $value)->toScale($precision, RoundingMode::HALF_UP);
+        }
     }
 
-    public static function fromUnitValue(mixed $value, int $precision): self
+    public static function fromUnitValue(int|float|string $value, int $precision): self
     {
-        $decimal = new Decimal(0.0, $precision);
-        $decimal->setUnitValue($value);
-
-        return $decimal;
+        return new self(BigDecimal::ofUnscaledValue($value, $precision));
     }
 
     /**
      * Parse the input from user input, with different comma/dot
      *
      */
-    public static function parseLocale(mixed $value, int $precision = 2): self
+    public static function parseLocale(int|float|string $value, int $precision = 2): self
     {
         if (!is_string($value)) {
             $value = (string) $value;
@@ -65,135 +71,91 @@ final class Decimal
 
     public function isZero(): bool
     {
-        return $this->getUnitValue() === '0';
+        return $this->bigDecimal->isZero();
     }
 
     public function isPositive(): bool
     {
-        return $this->getUnitValue() > 0;
+        return $this->bigDecimal->isPositive();
     }
 
     public function isNegative(): bool
     {
-        return $this->getUnitValue() < 0;
+        return $this->bigDecimal->isNegative();
     }
 
     public function isZeroOrPositive(): bool
     {
-        return $this->isZero() || $this->isPositive();
+        return $this->bigDecimal->isPositiveOrZero();
     }
 
     public function isZeroOrNegative(): bool
     {
-        return $this->isZero() || $this->isNegative();
+        return $this->bigDecimal->isNegativeOrZero();
     }
 
     public function getUnitValue(): mixed
     {
-        return $this->value;
+        return $this->bigDecimal->getUnscaledValue();
     }
 
-    public function equals(mixed $value): bool
+    public function equals(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() === $value->getUnitValue();
+        return $this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
 
-    public function isBiggerThan(mixed $value): bool
+    public function isBiggerThan(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() > $value->getUnitValue();
+        return $this->bigDecimal->isGreaterThan($this->prepareValue($value));
     }
 
-    public function isBiggerOrEqualThan(mixed $value): bool
+    public function isBiggerOrEqualThan(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() >= $value->getUnitValue();
+        return $this->bigDecimal->isGreaterThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function isSmallerThan(mixed $value): bool
+    public function isSmallerThan(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() < $value->getUnitValue();
+        return $this->bigDecimal->isLessThan($this->prepareValue($value));
     }
 
-    public function isSmallerOrEqualThan(mixed $value): bool
+    public function isSmallerOrEqualThan(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() <= $value->getUnitValue();
+        return $this->bigDecimal->isLessThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function notEquals(mixed $value): bool
+    public function notEquals(self|int|float|string $value): bool
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return $this->getUnitValue() !== $value->getUnitValue();
+        return !$this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
 
-    public function add(mixed $value): self
+    public function add(self|int|float|string $value): self
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return Decimal::fromUnitValue($this->getUnitValue() + $value->getUnitValue(), $this->getPrecision());
+        return new self($this->bigDecimal->plus($this->prepareValue($value)), $this->precision);
     }
 
-    public function sub(mixed $value): self
+    public function sub(self|int|float|string $value): self
     {
-        if (!($value instanceof Decimal)) {
-            $value = new Decimal($value, $this->getPrecision());
-        }
-
-        $this->comparePrecision($value);
-
-        return Decimal::fromUnitValue($this->getUnitValue() - $value->getUnitValue(), $this->getPrecision());
+        return new self($this->bigDecimal->minus($this->prepareValue($value)), $this->precision);
     }
 
-    public function multiply(mixed $multiplier): self
+    public function multiply(self|int|float|string $multiplier): self
     {
-        return Decimal::fromUnitValue($this->getUnitValue() * $multiplier, $this->getPrecision());
+        return new self($this->bigDecimal->multipliedBy($this->prepareValue($multiplier)), $this->precision);
     }
 
-    public function divide(mixed $division): self
+    public function divide(self|int|float|string $division): self
     {
-        return Decimal::fromUnitValue($this->getUnitValue() / $division, $this->getPrecision());
+        $result = $this->bigDecimal->dividedBy($this->prepareValue($division), null, RoundingMode::HALF_UP);
+
+        return new self($result, $this->precision);
     }
 
     public function toString(?int $precision = null): string
     {
-        return $this->parseAsString($this->getUnitValue() / $this->getMultiplier(), $precision);
+        $precision = $precision ?? $this->precision;
+
+        return (string) $this->bigDecimal->toScale($precision, RoundingMode::HALF_UP);
     }
 
     public function __toString()
@@ -201,30 +163,21 @@ final class Decimal
         return $this->toString();
     }
 
-    private function parseAsString(mixed $value, ?int $precision = null): string
+    private function prepareValue(self|BigDecimal|int|float|string $value): BigDecimal
     {
-        return number_format($value, !is_null($precision) ? $precision : $this->getPrecision(), '.', '');
-    }
-
-    private function getPrecision(): int
-    {
-        return $this->precision;
-    }
-
-    private function getMultiplier(): int
-    {
-        return 10 ** $this->getPrecision();
-    }
-
-    private function setUnitValue(mixed $value): void
-    {
-        $this->value = number_format($value, 0, '', '');
-    }
-
-    private function comparePrecision(self $other): void
-    {
-        if ($other->getPrecision() !== $this->getPrecision()) {
-            throw new \RuntimeException('Precision must match');
+        if ($value instanceof BigDecimal) {
+            return $value;
         }
+
+        if ($value instanceof self) {
+            return $value->getInternalDecimal();
+        }
+
+        return (new self($value))->getInternalDecimal();
+    }
+
+    private function getInternalDecimal(): BigDecimal
+    {
+        return $this->bigDecimal;
     }
 }

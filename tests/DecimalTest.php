@@ -316,7 +316,7 @@ class DecimalTest extends TestCase
         return [
             [1, '1'],
             ['1.00', '1'],
-            [0.111, 0.112, 2, 2],
+            [0.111, 0.112, 2],
         ];
     }
 
@@ -354,6 +354,9 @@ class DecimalTest extends TestCase
             [0.1, 2, '0.05'],
             ['2', '2', '1.00'],
             ['2.0', '2', '1', 0],
+            ['2.0', '20', '0', 0],
+            ['2.0', '20', '0.1', 1],
+            ['2.0', '200', '0.0', 1],
         ];
     }
 
@@ -398,8 +401,6 @@ class DecimalTest extends TestCase
 
     public function testPreservesInternalPrecision()
     {
-        $this->markTestSkipped('Higher internal precision is currently not preserved');
-
         $a = decimal('2.30')->multiply('0.75')->toString();
         $this->assertEquals('1.73', $a);
 
@@ -411,16 +412,6 @@ class DecimalTest extends TestCase
     public function testDecimalIsNotEqual()
     {
         $this->assertTrue(decimal(3)->notEquals(5));
-    }
-
-    public function testComparePrecision()
-    {
-        $this->expectException(RuntimeException::class);
-
-        $a = decimal(3.00, 3);
-        $b = decimal(5.00, 5);
-
-        $a->equals($b);
     }
 
     public function testIsBiggerThan()
