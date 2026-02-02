@@ -12,7 +12,7 @@ final readonly class Decimal
     private BigDecimal $bigDecimal;
     private int $precision;
 
-    public function __construct(mixed $value, int $precision = 2)
+    public function __construct(self|BigDecimal|int|float|string $value, int $precision = 2)
     {
         $this->precision = $precision;
 
@@ -21,11 +21,11 @@ final readonly class Decimal
         } elseif ($value instanceof BigDecimal) {
             $this->bigDecimal = clone $value;
         } else {
-            $this->bigDecimal = BigDecimal::of($value)->toScale($precision, RoundingMode::HALF_UP);
+            $this->bigDecimal = BigDecimal::of((string) $value)->toScale($precision, RoundingMode::HALF_UP);
         }
     }
 
-    public static function fromUnitValue(mixed $value, int $precision): self
+    public static function fromUnitValue(int|float|string $value, int $precision): self
     {
         return new self(BigDecimal::ofUnscaledValue($value, $precision));
     }
@@ -34,7 +34,7 @@ final readonly class Decimal
      * Parse the input from user input, with different comma/dot
      *
      */
-    public static function parseLocale(mixed $value, int $precision = 2): self
+    public static function parseLocale(int|float|string $value, int $precision = 2): self
     {
         if (!is_string($value)) {
             $value = (string) $value;
@@ -99,52 +99,52 @@ final readonly class Decimal
         return $this->bigDecimal->getUnscaledValue();
     }
 
-    public function equals(mixed $value): bool
+    public function equals(self|BigDecimal|int|float|string $value): bool
     {
         return $this->bigDecimal->isEqualTo($this->prepareValue($value));
     }
 
-    public function isBiggerThan(mixed $value): bool
+    public function isBiggerThan(self|BigDecimal|int|float|string $value): bool
     {
         return $this->bigDecimal->isGreaterThan($this->prepareValue($value));
     }
 
-    public function isBiggerOrEqualThan(mixed $value): bool
+    public function isBiggerOrEqualThan(self|BigDecimal|int|float|string $value): bool
     {
         return $this->bigDecimal->isGreaterThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function isSmallerThan(mixed $value): bool
+    public function isSmallerThan(self|BigDecimal|int|float|string $value): bool
     {
         return $this->bigDecimal->isLessThan($this->prepareValue($value));
     }
 
-    public function isSmallerOrEqualThan(mixed $value): bool
+    public function isSmallerOrEqualThan(self|BigDecimal|int|float|string $value): bool
     {
         return $this->bigDecimal->isLessThanOrEqualTo($this->prepareValue($value));
     }
 
-    public function notEquals(mixed $value): bool
+    public function notEquals(self|BigDecimal|int|float|string $value): bool
     {
         return !$this->equals($this->prepareValue($value));
     }
 
-    public function add(mixed $value): self
+    public function add(self|BigDecimal|int|float|string $value): self
     {
         return new self($this->bigDecimal->plus($this->prepareValue($value)), $this->precision);
     }
 
-    public function sub(mixed $value): self
+    public function sub(self|BigDecimal|int|float|string $value): self
     {
         return new self($this->bigDecimal->minus($this->prepareValue($value)), $this->precision);
     }
 
-    public function multiply(mixed $multiplier): self
+    public function multiply(self|BigDecimal|int|float|string $multiplier): self
     {
         return new self($this->bigDecimal->multipliedBy($this->prepareValue($multiplier)), $this->precision);
     }
 
-    public function divide(mixed $division): self
+    public function divide(self|BigDecimal|int|float|string $division): self
     {
         $result = $this->bigDecimal->dividedBy($this->prepareValue($division), null, RoundingMode::HALF_UP);
 
@@ -163,9 +163,17 @@ final readonly class Decimal
         return $this->toString();
     }
 
-    private function prepareValue($value): BigDecimal
+    private function prepareValue(self|BigDecimal|int|float|string $value): BigDecimal
     {
-        return $value instanceof self ? $value->getInternalDecimal() : (new self($value))->getInternalDecimal();
+        if ($value instanceof BigDecimal) {
+            return $value;
+        }
+
+        if ($value instanceof self) {
+            return $value->getInternalDecimal();
+        }
+
+        return (new self($value))->getInternalDecimal();
     }
 
     private function getInternalDecimal(): BigDecimal
